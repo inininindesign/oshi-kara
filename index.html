@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My☆カラ</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Pacifico&family=Dela+Gothic+One&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -26,21 +26,34 @@
       position: sticky; top: 0; z-index: 100;
     }
     header h1 {
-      font-family: 'Pacifico', cursive;
-      font-size: 1.6rem; letter-spacing: 0.02em; font-weight: 400;
+      font-size: 1.6rem; line-height: 1;
       background: linear-gradient(135deg, #f0abfc 0%, #f9a8d4 50%, #fcd34d 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    .title-my   { font-family: 'Pacifico', cursive; font-weight: 400; letter-spacing: 0.01em; }
+    .title-kara { font-family: 'Dela Gothic One', cursive; font-weight: 400; letter-spacing: 0.04em; }
 
-    #statusBadge {
-      font-size: 0.74rem; padding: 4px 12px; border-radius: 20px;
-      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
-      border: 1px solid rgba(255,255,255,0.12);
-      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    .reload-header-btn {
+      padding: 5px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.55); font-family: inherit; transition: all 0.2s;
     }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-    .dot.spin { background: none; border: 2px solid currentColor; border-top-color: transparent; animation: spin 0.8s linear infinite; }
+    .reload-header-btn:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+
+    .back-to-top {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(124,58,237,0.82); color: white; border: none;
+      font-size: 1.1rem; cursor: pointer; z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      transition: opacity 0.25s, transform 0.25s;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .back-to-top.visible { display: flex; }
+    .back-to-top:hover { transform: translateY(-3px); background: rgba(124,58,237,1); }
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .container { max-width: 1200px; margin: 0 auto; padding: 28px 16px; }
@@ -252,13 +265,15 @@
 <body>
 <header>
   <div>
-    <h1>My☆カラ</h1>
+    <h1><span class="title-my">My☆</span><span class="title-kara">カラ</span></h1>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="reload-header-btn" onclick="loadData(true)">↻ 更新</button>
     <button class="add-btn" onclick="openAddModal()">＋ 曲を追加</button>
-    <div id="statusBadge"><span class="dot spin" id="sDot"></span><span id="sTxt">読み込み中...</span></div>
   </div>
 </header>
+
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="トップへ戻る">↑</button>
 
 <div class="modal-overlay" id="addModal">
   <div class="modal">
@@ -411,11 +426,11 @@ const ALL_TAGS  = ['歌える','くるカラ','カラオケ','バラード・感
 
 function hashStr(s) { let h=5381; for(let i=0;i<s.length;i++) h=Math.imul(h,33)^s.charCodeAt(i); return (h>>>0).toString(36); }
 function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60) return s+'秒前'; if(s<3600) return Math.floor(s/60)+'分前'; return Math.floor(s/3600)+'時間前'; }
-function setStatus(color, text, spin=false) {
-  document.getElementById('sTxt').textContent = text;
-  document.getElementById('sDot').className = 'dot' + (spin?' spin':'');
-  document.getElementById('statusBadge').style.color = color;
-}
+function setStatus() {}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 300);
+});
 function getCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; } }
 function putCache(obj) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(obj)); } catch {} }
 
