@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My☆カラ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', 'Helvetica Neue', Arial, sans-serif;
+      background: #0d0b1e;
+      background-image:
+        radial-gradient(ellipse at 15% 40%, rgba(109,40,217,0.28) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 15%, rgba(233,69,96,0.2) 0%, transparent 45%),
+        radial-gradient(ellipse at 60% 85%, rgba(16,185,129,0.1) 0%, transparent 40%);
+      color: #f0f0f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(13,11,30,0.82);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: white; padding: 10px 24px;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    header h1 {
+      font-size: 1.5rem; letter-spacing: 0.08em; font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, rgba(200,180,255,0.85) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p { margin-top: 3px; font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+
+    #statusBadge {
+      font-size: 0.74rem; padding: 4px 12px; border-radius: 20px;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .dot.spin { background: none; border: 2px solid currentColor; border-top-color: transparent; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 28px 16px; }
+
+    .loading { text-align: center; padding: 80px 20px; color: rgba(255,255,255,0.4); }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.08); border-top-color: #a78bfa;
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+
+    .error-box {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; color: #fca5a5;
+    }
+    .error-box strong { display: block; margin-bottom: 8px; }
+    .error-box ol { margin-left: 20px; line-height: 2; }
+
+    .filters {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px; padding: 20px 24px; margin-bottom: 24px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 0.67rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    input[type="text"], select {
+      border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 8px 12px;
+      font-size: 0.95rem; outline: none; transition: border-color 0.2s, background 0.2s;
+      background: rgba(255,255,255,0.07); color: #f0f0f0; font-family: inherit;
+    }
+    input[type="text"]:focus, select:focus { border-color: #a78bfa; background: rgba(167,139,250,0.08); }
+    input[type="text"]::placeholder { color: rgba(255,255,255,0.25); }
+    input[type="text"] { width: 220px; }
+    select { min-width: 130px; cursor: pointer; }
+    select option { background: #1e1a38; color: #f0f0f0; }
+
+    .btn-row { display: flex; gap: 8px; }
+    .reset-btn {
+      padding: 8px 18px; border-radius: 10px; cursor: pointer; font-size: 0.88rem;
+      transition: all 0.2s; border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.65); font-family: inherit;
+    }
+    .reset-btn:hover { background: rgba(255,255,255,0.12); }
+    .reload-btn {
+      padding: 8px 18px; border-radius: 10px; cursor: pointer; font-size: 0.88rem;
+      transition: all 0.2s; border: 1px solid rgba(167,139,250,0.35);
+      background: rgba(167,139,250,0.12); color: #c4b5fd; font-family: inherit;
+    }
+    .reload-btn:hover { background: rgba(167,139,250,0.22); }
+
+    .filter-section-label {
+      font-size: 0.67rem; font-weight: 700; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; letter-spacing: 0.1em; margin: 16px 0 8px;
+    }
+    .decade-buttons, .tag-buttons, .kana-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+    .kana-btn, .decade-btn, .tag-btn {
+      padding: 5px 13px; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
+      font-size: 0.82rem; cursor: pointer; background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6); transition: all 0.18s; font-weight: 500; font-family: inherit;
+    }
+    .kana-btn:hover, .decade-btn:hover { border-color: #a78bfa; color: #c4b5fd; background: rgba(167,139,250,0.1); }
+    .kana-btn.active, .decade-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+    .tag-btn:hover { border-color: #e94560; color: #fda4af; background: rgba(233,69,96,0.1); }
+    .tag-btn.active { background: #e94560; color: white; border-color: #e94560; }
+
+    .results-info { font-size: 0.88rem; color: rgba(255,255,255,0.38); margin-bottom: 14px; padding: 0 4px; }
+    .results-info strong { color: #a78bfa; }
+
+    .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+
+    .song-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 12px 14px;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s, border-color 0.18s;
+      border-left: 3px solid rgba(255,255,255,0.08);
+      position: relative; overflow: hidden;
+    }
+    .song-card::after {
+      content: '♪';
+      position: absolute; right: 6px; bottom: 2px;
+      font-size: 4.5rem; opacity: 0.045; line-height: 1;
+      pointer-events: none; user-select: none;
+    }
+    .song-card:hover {
+      transform: translateY(-3px);
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.16);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    .song-card.vocal-male   { border-left-color: #60a5fa; }
+    .song-card.vocal-female { border-left-color: #f472b6; }
+    .song-card.vocal-double { border-left-color: #c084fc; }
+
+    .edit-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none; cursor: pointer;
+      font-size: 0.82rem; opacity: 0; padding: 3px; line-height: 1;
+      transition: opacity 0.18s; z-index: 1;
+    }
+    .song-card:hover .edit-btn { opacity: 0.45; }
+    .edit-btn:hover { opacity: 1 !important; }
+
+    .song-year   { font-size: 0.74rem; color: rgba(255,255,255,0.38); font-weight: 600; letter-spacing: 0.05em; }
+    .song-title  { font-size: 1.02rem; font-weight: 700; margin: 6px 0 3px; color: #f0f0f0; line-height: 1.35; }
+    .song-artist { font-size: 0.86rem; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+    .song-tags   { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag-pill    { padding: 2px 9px; border-radius: 12px; font-size: 0.73rem; font-weight: 500; border: 1px solid transparent; }
+
+    .tag-歌える       { background: rgba(59,130,246,0.2);  color: #93c5fd; border-color: rgba(59,130,246,0.3); }
+    .tag-くるカラ     { background: rgba(16,185,129,0.2);  color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
+    .tag-カラオケ     { background: rgba(245,158,11,0.2);  color: #fcd34d; border-color: rgba(245,158,11,0.3); }
+    .tag-大好き       { background: rgba(244,114,182,0.2); color: #f9a8d4; border-color: rgba(244,114,182,0.3); }
+    .tag-自己満       { background: rgba(168,85,247,0.2);  color: #d8b4fe; border-color: rgba(168,85,247,0.3); }
+    .tag-バラード感涙 { background: rgba(14,165,233,0.2);  color: #7dd3fc; border-color: rgba(14,165,233,0.3); }
+    .tag-映画アニメ   { background: rgba(249,115,22,0.2);  color: #fdba74; border-color: rgba(249,115,22,0.3); }
+    .tag-センス       { background: rgba(20,184,166,0.2);  color: #5eead4; border-color: rgba(20,184,166,0.3); }
+    .tag-ハモり       { background: rgba(168,85,247,0.2);  color: #d8b4fe; border-color: rgba(168,85,247,0.3); }
+
+    .vocal-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 12px;
+      font-size: 0.71rem; font-weight: 600; margin-left: 6px;
+    }
+    .vocal-male   .vocal-badge { background: rgba(96,165,250,0.2);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.3); }
+    .vocal-female .vocal-badge { background: rgba(244,114,182,0.2); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.3); }
+    .vocal-double .vocal-badge { background: rgba(192,132,252,0.2); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.3); }
+
+    .tension-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 50%;
+      font-size: 0.67rem; font-weight: 700; margin-left: 5px; vertical-align: middle;
+    }
+    .tension-lo { background: rgba(59,130,246,0.25);  color: #93c5fd; }
+    .tension-md { background: rgba(245,158,11,0.25);  color: #fcd34d; }
+    .tension-hi { background: rgba(239,68,68,0.28);   color: #fca5a5; }
+
+    .no-results { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.28); font-size:1.05rem; grid-column:1/-1; }
+
+    .add-btn {
+      padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;
+      background: linear-gradient(135deg, #e94560 0%, #c73652 100%);
+      color: white; border: none; font-weight: 600;
+      transition: opacity 0.2s, transform 0.15s; font-family: inherit; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(233,69,96,0.35);
+    }
+    .add-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1535; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 28px;
+      width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+    .modal h2 { font-size: 1.15rem; margin-bottom: 20px; color: #f0f0f0; }
+    .modal-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .modal-field label { font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.07em; }
+    .modal-field label .req { color: #e94560; }
+    .modal-field input, .modal-field select {
+      border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 9px 12px;
+      font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+      background: rgba(255,255,255,0.07); color: #f0f0f0; font-family: inherit;
+    }
+    .modal-field input:focus, .modal-field select:focus { border-color: #a78bfa; }
+    .modal-field input::placeholder { color: rgba(255,255,255,0.25); }
+    .modal-field select option { background: #1e1a38; }
+    .modal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .modal-tag-cb { display: none; }
+    .modal-tag-label {
+      padding: 5px 12px; border: 1px solid rgba(255,255,255,0.18); border-radius: 20px;
+      font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+      color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.05);
+    }
+    .modal-tag-cb:checked + .modal-tag-label { background: #e94560; color: white; border-color: #e94560; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+    .modal-cancel {
+      padding: 9px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65);
+      cursor: pointer; font-size: 0.9rem; font-family: inherit;
+    }
+    .modal-submit {
+      padding: 9px 20px; border-radius: 8px; border: none;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: white; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      font-family: inherit; box-shadow: 0 4px 12px rgba(109,40,217,0.35);
+    }
+    .modal-submit:hover { opacity: 0.9; }
+    .modal-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-msg { font-size: 0.85rem; margin-top: 10px; text-align: center; min-height: 20px; }
+    .modal-msg.ok  { color: #6ee7b7; }
+    .modal-msg.err { color: #fca5a5; }
+
+    @media (max-width: 640px) {
+      header { padding: 16px; }
+      header h1 { font-size: 1.25rem; }
+      .filter-row { flex-direction: column; }
+      input[type="text"] { width: 100%; }
+      .song-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>My☆カラ</h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="add-btn" onclick="openAddModal()">＋ 曲を追加</button>
+    <div id="statusBadge"><span class="dot spin" id="sDot"></span><span id="sTxt">読み込み中...</span></div>
+  </div>
+</header>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>🎵 曲を追加</h2>
+    <div class="modal-field">
+      <label>曲名 <span class="req">*</span></label>
+      <input type="text" id="f_title" placeholder="曲名を入力">
+    </div>
+    <div class="modal-field">
+      <label>歌手名 / 作品名 <span class="req">*</span></label>
+      <input type="text" id="f_artist" placeholder="アーティスト名">
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div class="modal-field" style="flex:1">
+        <label>発売年</label>
+        <input type="number" id="f_year" placeholder="例: 2020" min="1900" max="2099">
+      </div>
+      <div class="modal-field" style="flex:1">
+        <label>テンション (1〜10)</label>
+        <input type="number" id="f_tension" placeholder="例: 5" min="1" max="10">
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>ボーカル</label>
+      <select id="f_vocal">
+        <option value="">未設定</option>
+        <option value="男性">男性</option>
+        <option value="女性">女性</option>
+        <option value="ダブル">ダブル</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>タグ</label>
+      <div class="modal-tags" id="modalTags"></div>
+    </div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddModal()">キャンセル</button>
+      <button class="modal-submit" id="submitBtn" onclick="submitSong()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2 id="editModalTitle">✏️ 曲を編集</h2>
+    <div style="display:flex;gap:12px;">
+      <div class="modal-field" style="flex:1">
+        <label>テンション (1〜10)</label>
+        <input type="number" id="ef_tension" placeholder="例: 5" min="1" max="10">
+      </div>
+      <div class="modal-field" style="flex:1">
+        <label>ボーカル</label>
+        <select id="ef_vocal">
+          <option value="">未設定</option>
+          <option value="男性">男性</option>
+          <option value="女性">女性</option>
+          <option value="ダブル">ダブル</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>タグ</label>
+      <div class="modal-tags" id="editModalTags"></div>
+    </div>
+    <div class="modal-msg" id="editModalMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">キャンセル</button>
+      <button class="modal-submit" id="editSubmitBtn" onclick="submitEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div id="errorBox" class="error-box" style="display:none">
+    <strong>⚠️ データの読み込みに失敗しました</strong>
+    スプレッドシートを「リンクを知っている全員が閲覧可」に設定してください：
+    <ol>
+      <li>スプレッドシートを開く</li>
+      <li>「共有」→「リンクを知っている全員」→「閲覧者」</li>
+      <li>このページを再読み込み</li>
+    </ol>
+  </div>
+
+  <div id="loadingBox" class="loading">
+    <div class="spinner"></div>
+    <p>データを読み込み中...</p>
+  </div>
+
+  <div id="appBox" style="display:none">
+    <div class="filters">
+      <div class="filter-section-label">検索・絞り込み</div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>曲名/作品名</label>
+          <input type="text" id="searchInput" placeholder="キーワードを入力...">
+        </div>
+        <div class="filter-group">
+          <label>アーティスト</label>
+          <select id="artistSelect"><option value="">すべてのアーティスト</option></select>
+        </div>
+        <div class="filter-group">
+          <label>ボーカル</label>
+          <select id="vocalSelect">
+            <option value="">すべて</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="ダブル">ダブル</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>並べ替え</label>
+          <select id="sortSelect">
+            <option value="year_asc">発売年 古い順</option>
+            <option value="year_desc">発売年 新しい順</option>
+            <option value="title_asc">曲名 50音順</option>
+            <option value="artist_asc">アーティスト 50音順</option>
+            <option value="tension_desc">テンション 高い順</option>
+            <option value="tension_asc">テンション 低い順</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>&nbsp;</label>
+          <div class="btn-row">
+            <button class="reset-btn" onclick="resetFilters()">リセット</button>
+            <button class="reload-btn" onclick="loadData(true)">↻ 更新</button>
+          </div>
+        </div>
+      </div>
+      <div class="filter-section-label">アーティスト かな</div>
+      <div class="kana-buttons" id="kanaButtons"></div>
+      <div class="filter-section-label">年代</div>
+      <div class="decade-buttons" id="decadeButtons"></div>
+      <div class="filter-section-label">タグ</div>
+      <div class="tag-buttons" id="tagButtons"></div>
+    </div>
+
+    <div class="results-info" id="resultsInfo"></div>
+    <div class="song-grid" id="songGrid"></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID  = '1hLwdo0GoJmoJOBD-8krJd7hsai8mExWDveZgh1vwc3A';
+const GID       = '0';
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const CACHE_KEY = 'oshikara_filter_v3';
+const TTL_MS    = 30 * 60 * 1000;
+const ALL_TAGS  = ['歌える','くるカラ','カラオケ','バラード・感涙','アニメ・映画','ハモり'];
+
+function hashStr(s) { let h=5381; for(let i=0;i<s.length;i++) h=Math.imul(h,33)^s.charCodeAt(i); return (h>>>0).toString(36); }
+function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60) return s+'秒前'; if(s<3600) return Math.floor(s/60)+'分前'; return Math.floor(s/3600)+'時間前'; }
+function setStatus(color, text, spin=false) {
+  document.getElementById('sTxt').textContent = text;
+  document.getElementById('sDot').className = 'dot' + (spin?' spin':'');
+  document.getElementById('statusBadge').style.color = color;
+}
+function getCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; } }
+function putCache(obj) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(obj)); } catch {} }
+
+function parseCSV(text) {
+  const rows=[]; let row=[],field='',inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i],n=text[i+1];
+    if(inQ){if(c==='"'&&n==='"'){field+='"';i++;}else if(c==='"')inQ=false;else field+=c;}
+    else{if(c==='"')inQ=true;else if(c===','){row.push(field);field='';}
+    else if(c==='\n'||(c==='\r'&&n==='\n')){row.push(field);field='';if(row.some(x=>x.trim()))rows.push(row);row=[];if(c==='\r')i++;}
+    else field+=c;}
+  }
+  if(row.length){row.push(field);if(row.some(x=>x.trim()))rows.push(row);}
+  return rows;
+}
+
+function toSongs(rows) {
+  if(!rows.length) return [];
+  const hdr = rows[0];
+  const find = (...names) => hdr.findIndex(h => names.includes(h.trim()));
+  const yearCol   = find('発売年');
+  const titleCol  = find('曲名');
+  const artistCol = find('歌手名/作品名','アーティスト');
+  const vCol      = find('ボーカル','vocal');
+  const tagCols   = ALL_TAGS.map(label => ({label, col: find(label)})).filter(t => t.col >= 0);
+  const tensionCol = find('テンション');
+  return rows.slice(1).map(r => {
+    const title      = titleCol>=0  ? r[titleCol]?.trim()||''  : '';
+    const artist     = artistCol>=0 ? r[artistCol]?.trim()||'' : '';
+    if(!title && !artist) return null;
+    const artistKana = r[0]?.trim() || '';
+    return {
+      year:    yearCol>=0    ? parseInt(r[yearCol])||null    : null,
+      tension: tensionCol>=0 ? parseInt(r[tensionCol])||null : null,
+      title, artist, artistKana,
+      tags:   tagCols.filter(t => r[t.col]?.trim()).map(t => t.label),
+      vocal:  vCol>=0 ? r[vCol]?.trim()||'' : '',
+    };
+  }).filter(Boolean);
+}
+
+const EDIT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxBA9cnifIWB-gPqSLXoESLpMQIdpRM8XggaPaMoRPXcZcbcbCSecDGP91wO3MHu_rm/exec';
+
+let SONGS=[], fetching=false, renderedSongs=[], editingSong=null;
+
+async function loadData(force=false) {
+  if(fetching) return;
+  const cache = getCache();
+  if(cache && !force && Date.now()-cache.fetchedAt < TTL_MS) {
+    SONGS=cache.songs; setStatus('#6ee7b7', `キャッシュ (${timeAgo(cache.fetchedAt)})`); showApp(); return;
+  }
+  if(cache && !force) { SONGS=cache.songs; showApp(); setStatus('rgba(255,255,255,0.7)', '確認中...', true); }
+  fetching=true;
+  try {
+    const res = await fetch(CSV_URL);
+    if(!res.ok) throw new Error(res.status);
+    const text = await res.text();
+    const h = hashStr(text);
+    if(cache && cache.hash===h) {
+      putCache({...cache, fetchedAt:Date.now()}); setStatus('#6ee7b7', '変更なし');
+    } else {
+      SONGS = toSongs(parseCSV(text));
+      putCache({songs:SONGS, hash:h, fetchedAt:Date.now()}); setStatus('#6ee7b7', '更新済み'); showApp();
+    }
+  } catch(e) {
+    if(!cache) { document.getElementById('loadingBox').style.display='none'; document.getElementById('errorBox').style.display='block'; setStatus('#fca5a5','読み込み失敗'); }
+    else { setStatus('#fca5a5', `オフライン(${timeAgo(cache.fetchedAt)})`); }
+  } finally { fetching=false; }
+}
+
+let selectedDecade=null, selectedTags=new Set(), selectedArtist='', selectedVocal='', searchText='', selectedSort='year_asc', selectedKana=null;
+
+function showApp() {
+  document.getElementById('loadingBox').style.display='none';
+  document.getElementById('appBox').style.display='block';
+  const sel = document.getElementById('artistSelect');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">すべてのアーティスト</option>';
+  const artistKanaMap = {};
+  SONGS.forEach(s=>{ if(!artistKanaMap[s.artist]) artistKanaMap[s.artist]=s.artistKana; });
+  [...new Set(SONGS.map(s=>s.artist))].sort((a,b)=>kanaFirstSort(artistKanaMap[a]||a, artistKanaMap[b]||b)).forEach(a => {
+    const k = artistKanaMap[a];
+    const o=document.createElement('option'); o.value=a; o.textContent=k?`${k} ${a}`:a; sel.appendChild(o);
+  });
+  sel.value = prev;
+  buildKanaButtons(); buildDecadeButtons(); buildTagButtons(); render();
+}
+
+function kanaFirstSort(a, b) {
+  const isAlphaA = /^[A-Za-z]/.test(a);
+  const isAlphaB = /^[A-Za-z]/.test(b);
+  if(isAlphaA && !isAlphaB) return -1;
+  if(!isAlphaA && isAlphaB) return 1;
+  return a.localeCompare(b, 'ja');
+}
+
+function buildKanaButtons() {
+  const kanas=[...new Set(SONGS.map(s=>s.artistKana).filter(Boolean))].sort(kanaFirstSort);
+  const c=document.getElementById('kanaButtons'); c.innerHTML='';
+  kanas.forEach(k => {
+    const btn=document.createElement('button');
+    btn.className='kana-btn'+(selectedKana===k?' active':'');
+    btn.textContent=k;
+    btn.onclick=()=>{ selectedKana=selectedKana===k?null:k; buildKanaButtons(); render(); };
+    c.appendChild(btn);
+  });
+}
+
+function buildDecadeButtons() {
+  const decades=[...new Set(SONGS.map(s=>s.year?Math.floor(s.year/10)*10:null).filter(Boolean))].sort();
+  const c=document.getElementById('decadeButtons'); c.innerHTML='';
+  decades.forEach(d => {
+    const btn=document.createElement('button');
+    btn.className='decade-btn'+(selectedDecade===d?' active':'');
+    btn.textContent=d+'s';
+    btn.onclick=()=>{ selectedDecade=selectedDecade===d?null:d; buildDecadeButtons(); render(); };
+    c.appendChild(btn);
+  });
+}
+
+function buildTagButtons() {
+  const c=document.getElementById('tagButtons'); c.innerHTML='';
+  ALL_TAGS.forEach(tag => {
+    const btn=document.createElement('button');
+    btn.className='tag-btn'+(selectedTags.has(tag)?' active':'');
+    btn.textContent=tag;
+    btn.onclick=()=>{ selectedTags.has(tag)?selectedTags.delete(tag):selectedTags.add(tag); buildTagButtons(); render(); };
+    c.appendChild(btn);
+  });
+}
+
+const TAG_CLASS = {
+  '歌える':'tag-歌える','くるカラ':'tag-くるカラ','カラオケ':'tag-カラオケ',
+  'バラード・感涙':'tag-バラード感涙','アニメ・映画':'tag-映画アニメ','ハモり':'tag-ハモり',
+};
+
+function render() {
+  let songs = SONGS.filter(s => {
+    if(searchText){ const q=searchText.toLowerCase(); if(!s.title.toLowerCase().includes(q)&&!s.artist.toLowerCase().includes(q)) return false; }
+    if(selectedKana   && s.artistKana!==selectedKana) return false;
+    if(selectedArtist && s.artist!==selectedArtist) return false;
+    if(selectedVocal  && s.vocal!==selectedVocal)   return false;
+    if(selectedDecade!==null){ if(!s.year||Math.floor(s.year/10)*10!==selectedDecade) return false; }
+    for(const t of selectedTags){ if(!s.tags.includes(t)) return false; }
+    return true;
+  }).sort((a,b)=>{
+    switch(selectedSort){
+      case 'year_asc':     return (a.year||9999)-(b.year||9999);
+      case 'year_desc':    return (b.year||0)-(a.year||0);
+      case 'title_asc':    return a.title.localeCompare(b.title,'ja');
+      case 'artist_asc':   return (a.artistKana||a.artist).localeCompare(b.artistKana||b.artist,'ja');
+      case 'tension_desc': return (b.tension||0)-(a.tension||0);
+      case 'tension_asc':  return (a.tension||9999)-(b.tension||9999);
+      default: return 0;
+    }
+  });
+
+  document.getElementById('resultsInfo').innerHTML=`<strong>${songs.length}曲</strong> / 全${SONGS.length}曲`;
+  renderedSongs = songs;
+  const grid=document.getElementById('songGrid');
+  if(!songs.length){ grid.innerHTML='<div class="no-results">条件に一致する曲が見つかりませんでした</div>'; return; }
+  grid.innerHTML=songs.map((s,i)=>{
+    const vc=s.vocal==='男性'?'vocal-male':s.vocal==='女性'?'vocal-female':s.vocal==='ダブル'?'vocal-double':'';
+    const badge=s.vocal?`<span class="vocal-badge">${s.vocal}</span>`:'';
+    const tc=s.tension?(s.tension<=3?'tension-lo':s.tension<=6?'tension-md':'tension-hi'):'';
+    const tbadge=s.tension?`<span class="tension-badge ${tc}">${s.tension}</span>`:'';
+    const pills=s.tags.map(t=>`<span class="tag-pill ${TAG_CLASS[t]||''}">${t}</span>`).join('');
+    return `<div class="song-card ${vc}">
+      <button class="edit-btn" onclick="event.stopPropagation();openEditModal(${i})" title="編集">✏️</button>
+      <div class="song-year">${s.year?s.year+'年':'年代不明'}${tbadge}${badge}</div>
+      <div class="song-title">${s.title}</div>
+      <div class="song-artist">${s.artist}</div>
+      ${pills?`<div class="song-tags">${pills}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function resetFilters() {
+  selectedDecade=null; selectedTags.clear(); selectedArtist=''; selectedVocal=''; searchText=''; selectedSort='year_asc'; selectedKana=null;
+  document.getElementById('searchInput').value='';
+  document.getElementById('artistSelect').value='';
+  document.getElementById('vocalSelect').value='';
+  document.getElementById('sortSelect').value='year_asc';
+  buildKanaButtons(); buildDecadeButtons(); buildTagButtons(); render();
+}
+
+document.getElementById('searchInput').addEventListener('input', e=>{ searchText=e.target.value; render(); });
+document.getElementById('artistSelect').addEventListener('change', e=>{ selectedArtist=e.target.value; render(); });
+document.getElementById('vocalSelect').addEventListener('change', e=>{ selectedVocal=e.target.value; render(); });
+document.getElementById('sortSelect').addEventListener('change', e=>{ selectedSort=e.target.value; render(); });
+
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgjdjicwN0ekid8aZB5oYOByJTKmf0nUbmUiCDCIPBVIFJ8DA5HNSsZmjYLA-TjmYN/exec';
+
+function openAddModal() {
+  const tags = document.getElementById('modalTags');
+  tags.innerHTML = ALL_TAGS.map(t =>
+    `<span><input type="checkbox" class="modal-tag-cb" id="mt_${t}" value="${t}">
+     <label class="modal-tag-label" for="mt_${t}">${t}</label></span>`
+  ).join('');
+  document.getElementById('modalMsg').textContent = '';
+  document.getElementById('addModal').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+  ['f_title','f_artist','f_year','f_tension'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f_vocal').value='';
+}
+
+async function submitSong() {
+  const title  = document.getElementById('f_title').value.trim();
+  const artist = document.getElementById('f_artist').value.trim();
+  if(!title || !artist) { showModalMsg('曲名とアーティスト名は必須です', 'err'); return; }
+
+  const data = { '曲名': title, '歌手名/作品名': artist };
+  const year = document.getElementById('f_year').value;
+  const tension = document.getElementById('f_tension').value;
+  const vocal = document.getElementById('f_vocal').value;
+  if(year)    data['発売年'] = parseInt(year);
+  if(tension) data['テンション'] = parseInt(tension);
+  if(vocal)   data['ボーカル'] = vocal;
+  document.querySelectorAll('.modal-tag-cb:checked').forEach(cb => { data[cb.value] = cb.value; });
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '送信中...';
+  showModalMsg('', '');
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...data, _token: 'oshikara-key-secret'})
+    });
+    showModalMsg('✅ 追加しました！（反映まで少し時間がかかることがあります）', 'ok');
+    btn.textContent = '追加する'; btn.disabled = false;
+    setTimeout(closeAddModal, 2000);
+  } catch(e) {
+    showModalMsg('送信に失敗しました', 'err');
+    btn.textContent = '追加する'; btn.disabled = false;
+  }
+}
+
+function showModalMsg(msg, type) {
+  const el = document.getElementById('modalMsg');
+  el.textContent = msg; el.className = 'modal-msg ' + type;
+}
+
+document.getElementById('addModal').addEventListener('click', e => {
+  if(e.target === document.getElementById('addModal')) closeAddModal();
+});
+
+function openEditModal(idx) {
+  const s = renderedSongs[idx];
+  if (!s) return;
+  editingSong = s;
+  document.getElementById('editModalTitle').textContent = `✏️ ${s.title}`;
+  document.getElementById('ef_tension').value = s.tension || '';
+  document.getElementById('ef_vocal').value = s.vocal || '';
+  const tagsEl = document.getElementById('editModalTags');
+  tagsEl.innerHTML = ALL_TAGS.map(t =>
+    `<span><input type="checkbox" class="modal-tag-cb" id="et_${t}" value="${t}" ${s.tags.includes(t)?'checked':''}>
+     <label class="modal-tag-label" for="et_${t}">${t}</label></span>`
+  ).join('');
+  document.getElementById('editModalMsg').textContent = '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingSong = null;
+}
+
+async function submitEdit() {
+  if (!editingSong) return;
+  const data = {
+    'テンション': document.getElementById('ef_tension').value ? parseInt(document.getElementById('ef_tension').value) : '',
+    'ボーカル':   document.getElementById('ef_vocal').value,
+  };
+  ALL_TAGS.forEach(tag => {
+    data[tag] = document.getElementById('et_' + tag)?.checked ? tag : '';
+  });
+
+  const url = `${EDIT_GAS_URL}?token=oshikara-edit&title=${encodeURIComponent(editingSong.title)}&artist=${encodeURIComponent(editingSong.artist)}&data=${encodeURIComponent(JSON.stringify(data))}`;
+
+  const btn = document.getElementById('editSubmitBtn');
+  btn.disabled = true; btn.textContent = '保存中...';
+
+  try {
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (json.success) {
+      showEditMsg('✅ 保存しました！', 'ok');
+      setTimeout(() => { closeEditModal(); loadData(true); }, 1500);
+    } else {
+      showEditMsg(json.error || '保存に失敗しました', 'err');
+    }
+  } catch {
+    showEditMsg('通信エラーが発生しました', 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '保存する';
+  }
+}
+
+function showEditMsg(msg, type) {
+  const el = document.getElementById('editModalMsg');
+  el.textContent = msg; el.className = 'modal-msg ' + type;
+}
+
+document.getElementById('editModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('editModal')) closeEditModal();
+});
+
+loadData();
+</script>
+</body>
+</html>
