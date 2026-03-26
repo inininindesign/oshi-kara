@@ -132,17 +132,21 @@
     .song-card.vocal-female { border-left-color: #f472b6; }
     .song-card.vocal-double { border-left-color: #c084fc; }
 
-    .card-body  { display: flex; align-items: center; gap: 10px; }
+    .card-body  { display: flex; align-items: stretch; gap: 12px; }
     .card-main  { flex: 1; min-width: 0; }
-    .card-side  { flex-shrink: 0; width: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .card-side  { flex-shrink: 0; width: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-left: 1px solid #f0eafa; padding-left: 12px; }
     .tension-big {
-      font-size: 2.6rem; font-weight: 900; line-height: 1;
+      font-size: 1.9rem; font-weight: 900; line-height: 1;
       background-clip: text; -webkit-background-clip: text; color: transparent;
     }
     .tension-big.tension-lo { background-image: linear-gradient(160deg, #60a5fa, #3b82f6); }
     .tension-big.tension-md { background-image: linear-gradient(160deg, #f59e0b, #ea580c); }
     .tension-big.tension-hi { background-image: linear-gradient(160deg, #ef4444, #ec4899); }
-    .tension-label { font-size: 0.6rem; font-weight: 700; color: #c4aff0; text-transform: uppercase; letter-spacing: 0.08em; }
+    .side-year  { font-size: 0.72rem; color: #9575c9; font-weight: 600; }
+    .side-vocal { font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    .vocal-male   .side-vocal { background: #dbeafe; color: #1d4ed8; }
+    .vocal-female .side-vocal { background: #fce7f3; color: #9d174d; }
+    .vocal-double .side-vocal { background: #ede9fe; color: #5b21b6; }
 
     .edit-btn {
       position: absolute; top: 8px; right: 8px;
@@ -153,9 +157,8 @@
     .song-card:hover .edit-btn { opacity: 0.5; }
     .edit-btn:hover { opacity: 1 !important; }
 
-    .song-year   { font-size: 0.74rem; color: #9575c9; font-weight: 600; letter-spacing: 0.05em; }
-    .song-title  { font-size: 1.08rem; font-weight: 700; margin: 5px 0 3px; color: #1a0050; line-height: 1.35; }
-    .song-artist { font-size: 0.9rem; color: #6d4c9e; margin-bottom: 8px; font-weight: 500; }
+    .song-title  { font-size: 1.15rem; font-weight: 700; margin: 0 0 4px; color: #1a0050; line-height: 1.35; }
+    .song-artist { font-size: 0.95rem; color: #6d4c9e; margin-bottom: 8px; font-weight: 500; }
     .song-tags   { display: flex; flex-wrap: wrap; gap: 4px; }
     .tag-pill    { padding: 2px 9px; border-radius: 12px; font-size: 0.73rem; font-weight: 600; border: 1px solid transparent; }
 
@@ -169,13 +172,6 @@
     .tag-センス       { background: #ccfbf1; color: #134e4a; border-color: #99f6e4; }
     .tag-ハモり       { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
 
-    .vocal-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 12px;
-      font-size: 0.71rem; font-weight: 600; margin-left: 6px;
-    }
-    .vocal-male   .vocal-badge { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .vocal-female .vocal-badge { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
-    .vocal-double .vocal-badge { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
 
     .tension-lo { color: #3b82f6; }
     .tension-md { color: #f59e0b; }
@@ -583,15 +579,17 @@ function render() {
   if(!songs.length){ grid.innerHTML='<div class="no-results">条件に一致する曲が見つかりませんでした</div>'; return; }
   grid.innerHTML=songs.map((s,i)=>{
     const vc=s.vocal==='男性'?'vocal-male':s.vocal==='女性'?'vocal-female':s.vocal==='ダブル'?'vocal-double':'';
-    const badge=s.vocal?`<span class="vocal-badge">${s.vocal}</span>`:'';
     const tc=s.tension?(s.tension<=3?'tension-lo':s.tension<=6?'tension-md':'tension-hi'):'';
     const pills=s.tags.map(t=>`<span class="tag-pill ${TAG_CLASS[t]||''}">${t}</span>`).join('');
-    const side=s.tension?`<div class="card-side"><div class="tension-big ${tc}">${s.tension}</div><div class="tension-label">テンション</div></div>`:'';
+    const sideYear  = s.year ? `<div class="side-year">${s.year}</div>` : '';
+    const sideVocal = s.vocal ? `<div class="side-vocal">${s.vocal}</div>` : '';
+    const sideTension = s.tension ? `<div class="tension-big ${tc}">${s.tension}</div>` : '';
+    const hasRight = sideTension || sideYear || sideVocal;
+    const side = hasRight ? `<div class="card-side">${sideTension}${sideYear}${sideVocal}</div>` : '';
     return `<div class="song-card ${vc}">
       <button class="edit-btn" onclick="event.stopPropagation();openEditModal(${i})" title="編集">✏️</button>
       <div class="card-body">
         <div class="card-main">
-          <div class="song-year">${s.year?s.year+'年':'年代不明'}${badge}</div>
           <div class="song-title">${s.title}</div>
           <div class="song-artist">${s.artist}</div>
           ${pills?`<div class="song-tags">${pills}</div>`:''}
