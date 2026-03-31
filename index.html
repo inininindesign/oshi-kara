@@ -261,7 +261,7 @@
       .song-grid { grid-template-columns: 1fr; }
     }
   </style>
-<!-- deploy:1774922637 --></head>
+<!-- deploy:1774923281 --></head>
 <body>
 <header>
   <div>
@@ -412,9 +412,9 @@
 const SHEET_ID  = '1hLwdo0GoJmoJOBD-8krJd7hsai8mExWDveZgh1vwc3A';
 const GID       = '0';
 const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-const CACHE_KEY = 'oshikara_filter_v4';
+const CACHE_KEY = 'oshikara_filter_v5';
 const TTL_MS    = 30 * 60 * 1000;
-const ALL_TAGS  = ['歌える','くるカラ','カラオケ','バラード・感涙','アニメ・映画','ハモり','オーケストラ'];
+const ALL_TAGS  = ['歌える','カラオケ','バラード・感涙','アニメ・映画','ハモり','オーケストラ'];
 
 function hashStr(s) { let h=5381; for(let i=0;i<s.length;i++) h=Math.imul(h,33)^s.charCodeAt(i); return (h>>>0).toString(36); }
 function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60) return s+'秒前'; if(s<3600) return Math.floor(s/60)+'分前'; return Math.floor(s/3600)+'時間前'; }
@@ -449,6 +449,8 @@ function toSongs(rows) {
   const vCol      = find('ボーカル','vocal');
   const tagCols   = ALL_TAGS.map(label => ({label, col: find(label)})).filter(t => t.col >= 0);
   const tensionCol = find('テンション');
+  const kuruKaraCol = find('くるカラ');
+  const utaeruCol = find('歌える');
   return rows.slice(1).map(r => {
     const title      = titleCol>=0  ? r[titleCol]?.trim()||''  : '';
     const artist     = artistCol>=0 ? r[artistCol]?.trim()||'' : '';
@@ -460,6 +462,8 @@ function toSongs(rows) {
       title, artist, artistKana,
       tags:   tagCols.filter(t => r[t.col]?.trim()).map(t => t.label),
       vocal:  vCol>=0 ? r[vCol]?.trim()||'' : '',
+      kuruKara: kuruKaraCol>=0 ? !!r[kuruKaraCol]?.trim() : false,
+      utaeru:   utaeruCol>=0  ? !!r[utaeruCol]?.trim()  : false,
     };
   }).filter(Boolean);
 }
@@ -563,12 +567,13 @@ function buildTagButtons() {
 }
 
 const TAG_CLASS = {
-  '歌える':'tag-歌える','くるカラ':'tag-くるカラ','カラオケ':'tag-カラオケ',
+  '歌える':'tag-歌える','カラオケ':'tag-カラオケ',
   'バラード・感涙':'tag-バラード感涙','アニメ・映画':'tag-映画アニメ','ハモり':'tag-ハモり','オーケストラ':'tag-オーケストラ',
 };
 
 function render() {
   let songs = SONGS.filter(s => {
+    if(s.kuruKara && !s.utaeru) return false;
     if(searchText){ const q=searchText.toLowerCase(); if(!s.title.toLowerCase().includes(q)&&!s.artist.toLowerCase().includes(q)) return false; }
     if(selectedKana   && s.artistKana!==selectedKana) return false;
     if(selectedArtist && s.artist!==selectedArtist) return false;
