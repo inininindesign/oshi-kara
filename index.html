@@ -261,7 +261,7 @@
       .song-grid { grid-template-columns: 1fr; }
     }
   </style>
-<!-- deploy:1774923281 --></head>
+<!-- deploy:1774924060 --></head>
 <body>
 <header>
   <div>
@@ -412,9 +412,9 @@
 const SHEET_ID  = '1hLwdo0GoJmoJOBD-8krJd7hsai8mExWDveZgh1vwc3A';
 const GID       = '0';
 const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-const CACHE_KEY = 'oshikara_filter_v5';
+const CACHE_KEY = 'oshikara_filter_v6';
 const TTL_MS    = 30 * 60 * 1000;
-const ALL_TAGS  = ['歌える','カラオケ','バラード・感涙','アニメ・映画','ハモり','オーケストラ'];
+const ALL_TAGS  = ['カラオケ','バラード・感涙','アニメ・映画','ハモり','オーケストラ'];
 
 function hashStr(s) { let h=5381; for(let i=0;i<s.length;i++) h=Math.imul(h,33)^s.charCodeAt(i); return (h>>>0).toString(36); }
 function timeAgo(ts) { const s=Math.floor((Date.now()-ts)/1000); if(s<60) return s+'秒前'; if(s<3600) return Math.floor(s/60)+'分前'; return Math.floor(s/3600)+'時間前'; }
@@ -529,8 +529,21 @@ function toggleKana() {
   document.getElementById('kanaButtons').classList.toggle('expanded', kanaExpanded);
   document.getElementById('kanaToggle').textContent = kanaExpanded ? '閉じる ▲' : 'すべて表示 ▼';
 }
+function songsWithoutKana() {
+  return SONGS.filter(s => {
+    if(s.kuruKara && !s.utaeru) return false;
+    if(searchText){ const q=searchText.toLowerCase(); if(!s.title.toLowerCase().includes(q)&&!s.artist.toLowerCase().includes(q)) return false; }
+    if(selectedArtist && s.artist!==selectedArtist) return false;
+    if(selectedVocal  && s.vocal!==selectedVocal)   return false;
+    if(selectedDecade!==null){ if(!s.year||Math.floor(s.year/10)*10!==selectedDecade) return false; }
+    for(const t of selectedTags){ if(!s.tags.includes(t)) return false; }
+    return true;
+  });
+}
 function buildKanaButtons() {
-  const kanas=[...new Set(SONGS.map(s=>s.artistKana).filter(Boolean))].sort(kanaFirstSort);
+  const base = songsWithoutKana();
+  const activeKanas = new Set(base.map(s=>s.artistKana).filter(Boolean));
+  const kanas=[...activeKanas].sort(kanaFirstSort);
   const c=document.getElementById('kanaButtons'); c.innerHTML='';
   kanas.forEach(k => {
     const btn=document.createElement('button');
@@ -567,7 +580,7 @@ function buildTagButtons() {
 }
 
 const TAG_CLASS = {
-  '歌える':'tag-歌える','カラオケ':'tag-カラオケ',
+  'カラオケ':'tag-カラオケ',
   'バラード・感涙':'tag-バラード感涙','アニメ・映画':'tag-映画アニメ','ハモり':'tag-ハモり','オーケストラ':'tag-オーケストラ',
 };
 
@@ -619,6 +632,7 @@ function render() {
       </div>
     </div>`;
   }).join('');
+  buildKanaButtons();
 }
 
 function resetFilters() {
