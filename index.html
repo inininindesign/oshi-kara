@@ -263,7 +263,7 @@
       .song-grid { grid-template-columns: 1fr; }
     }
   </style>
-<!-- deploy:1774931382 --></head>
+<!-- deploy:1774931947 --></head>
 <body>
 <header>
   <div>
@@ -413,7 +413,7 @@
 
 <script>
 const GAS_URL   = 'https://script.google.com/macros/s/AKfycbxnB7W5GF1BCVi952DYrbFrIwy8dRe-uUKhal0sV7Obqe3YEtiwZG72hr9iaP2v7DCq/exec';
-const CACHE_KEY = 'oshikara_filter_v11';
+const CACHE_KEY = 'oshikara_filter_v12';
 const TTL_MS    = 5 * 60 * 1000;
 const ALL_TAGS  = ['カラオケ','バラード・感涙','アニメ・映画','ハモり','オーケストラ'];
 
@@ -452,9 +452,7 @@ function toSongs(rows) {
   const tensionCol = find('テンション');
   const kuruKaraCol = find('くるカラ');
   const utaeruCol = find('歌える');
-  console.log('ヘッダー:', hdr);
-  console.log('tagCols:', tagCols);
-  console.log('kuruKaraCol:', kuruKaraCol, 'utaeruCol:', utaeruCol);
+
   return rows.slice(1).map(r => {
     const title      = titleCol>=0  ? r[titleCol]?.trim()||''  : '';
     const artist     = artistCol>=0 ? r[artistCol]?.trim()||'' : '';
@@ -514,7 +512,7 @@ function showApp() {
   sel.innerHTML = '<option value="">すべてのアーティスト</option>';
   const artistKanaMap = {};
   SONGS.forEach(s=>{ if(!artistKanaMap[s.artist]) artistKanaMap[s.artist]=s.artistKana; });
-  [...new Set(SONGS.map(s=>s.artist))].sort((a,b)=>kanaFirstSort(artistKanaMap[a]||a, artistKanaMap[b]||b)).forEach(a => {
+  [...new Set(SONGS.filter(s=>!(s.kuruKara&&!s.utaeru)).map(s=>s.artist))].sort((a,b)=>kanaFirstSort(artistKanaMap[a]||a, artistKanaMap[b]||b)).forEach(a => {
     const k = artistKanaMap[a];
     const o=document.createElement('option'); o.value=a; o.textContent=k?`${k} ${a}`:a; sel.appendChild(o);
   });
@@ -614,7 +612,7 @@ function render() {
     }
   });
 
-  document.getElementById('resultsInfo').innerHTML=`<strong>${songs.length}曲</strong> / 全${SONGS.length}曲`;
+  document.getElementById('resultsInfo').innerHTML=`<strong>${songs.length}曲</strong> / 全${SONGS.filter(s=>!(s.kuruKara&&!s.utaeru)).length}曲`;
   renderedSongs = songs;
   const grid=document.getElementById('songGrid');
   if(!songs.length){ grid.innerHTML='<div class="no-results">条件に一致する曲が見つかりませんでした</div>'; return; }
